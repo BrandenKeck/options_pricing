@@ -1,6 +1,7 @@
 # IMPORTS
 import json, webbrowser, pyetrade, datetime, time
 import numpy as np
+import matplotlib.pyplot as plt
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
@@ -90,7 +91,7 @@ class susanoo():
                             prices[ticker],
                             put_option['ask'],
                             datetime.date.today(),
-                            date,
+                            expiry,
                             put_option['strikePrice']
                         )
                     )
@@ -100,31 +101,53 @@ class susanoo():
 class kusanagi():
 
     def __init__(self, ticker, type, quote_price, opt_price, curr_date, exp_date, strike):
+
+        # Define Underlying
         self.ticker = ticker
-        self.type = type
         self.quote_price = quote_price
+
+        # Option Information
+        self.opt_type = type
         self.opt_price = opt_price
+        self.strike_price = strike
         self.curr_date = curr_date
         self.exp_date = exp_date
-        self.strike = strike
+        delta = self.exp_date - self.curr_date
+        self.dT = delta.days/365
 
-    def black_scholes(self):
-        pass
+        # Model Parameters
+        self.theta = 0.2
+        self.sigma = 1
+
+    def simulate(self, timesteps):
+        dt = self.dT / timesteps
+        S = [self.quote_price]
+        for tt in np.arange(timesteps):
+            S_0 = S[len(S)-1]
+            dS = self.theta*S_0*dt + self.sigma*np.sqrt(dt)*np.random.normal()
+            S.append(S_0 + dS)
+        return S
 
     def to_json(self):
         return {
             "ticker": self.ticker,
-            "type": self.type,
+            "type": self.opt_type,
             "quote": self.quote_price,
             "price": self.opt_price,
-            "strike": self.strike,
+            "strike": self.strike_price,
             "expiry": self.exp_date
         }
 
-
+len(sus.models)
+idx = 1200
 sus = susanoo()
 sus.get_options(["NVDA"])
-sus.models[5].to_json()
+sus.models[idx].to_json()
+S = sus.models[idx].simulate(1000)
+dT = sus.models[idx].dT
+dT * 365
+
+plt.plot(365 * dT * np.arange(len(S))/len(S), S)
 
 ticker = "COIN"
 dates = sus.market.get_option_expire_date(ticker)['OptionExpireDateResponse']['ExpirationDate']
